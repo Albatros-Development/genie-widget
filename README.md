@@ -98,14 +98,22 @@ submit disabled while empty, enabled on input · screenshot captured · picker o
 does not activate the host's own button** · **Done commits** · badge renders · POST fires once ·
 payload carries type, message, page, a 9.6 KB screenshot and the pick · dialog closes.
 
-## Build
+## Install
 
 ```bash
-npx esbuild src/index.ts --bundle --format=esm --external:html-to-image
+npm install github:mriahi1/genie-widget
+```
+
+`dist/` is not committed — the `prepare` script builds it when npm installs the package, which is what
+makes a git dependency work without the host configuring anything. No `transpilePackages`, no
+`extensionAlias`, no build config in your app.
+
+```bash
+npm run build   # esbuild bundle + .d.ts, into dist/
 ```
 
 `html-to-image` is left external so a host that already depends on it resolves its own copy — 24 KB
-rather than 54. Bundle it in if your host does not.
+rather than 54. It is a declared dependency, so a host that does not have it gets it.
 
 ## Known limits
 

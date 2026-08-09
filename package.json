@@ -4,11 +4,16 @@
   "private": true,
   "type": "module",
   "description": "Drop-in feedback overlay. One custom element, any product, no framework.",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
+    "build": "esbuild src/index.ts --bundle --format=esm --external:html-to-image --outfile=dist/index.js && tsc --noEmit false --declaration --emitDeclarationOnly --outDir dist",
+    "prepare": "npm run build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,5 +22,10 @@
   "devDependencies": {
     "esbuild": "^0.28.2",
     "typescript": "^5.7.2"
-  }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ]
 }
