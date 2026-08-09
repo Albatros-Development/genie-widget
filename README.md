@@ -104,9 +104,16 @@ payload carries type, message, page, a 9.6 KB screenshot and the pick · dialog 
 npm install github:mriahi1/genie-widget
 ```
 
-`dist/` is not committed — the `prepare` script builds it when npm installs the package, which is what
-makes a git dependency work without the host configuring anything. No `transpilePackages`, no
-`extensionAlias`, no build config in your app.
+**`dist/` is committed, deliberately.** A `prepare` script would be cleaner and does not work: **yarn 1
+does not run `prepare` for git dependencies**, so the first real consumer installed the package and got
+no build. A committed `dist/` works with npm, yarn and pnpm alike and needs no host config — no
+`transpilePackages`, no `extensionAlias`, nothing in your app's build.
+
+The cost is a build artefact in git, which can go stale against `src/`. That is a smaller risk than it
+sounds: it lives in the same repo and the same commit as the source it is built from, unlike a bundle
+vendored into a consumer, which is the drift this package exists to end.
+
+**If you change `src/`, run this before committing:**
 
 ```bash
 npm run build   # esbuild bundle + .d.ts, into dist/
@@ -117,6 +124,8 @@ rather than 54. It is a declared dependency, so a host that does not have it get
 
 ## Known limits
 
+- **`dist/` can go stale against `src/`.** Nothing enforces the rebuild yet — there is no CI here. Run
+  `npm run build` before committing a source change.
 - **No tests in CI.** The Playwright drive was ad hoc; it should become a spec.
 - **Screenshot capture uses `html-to-image`**, inheriting its limits on cross-origin images and
   exotic colour functions.
