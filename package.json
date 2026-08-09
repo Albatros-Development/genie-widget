@@ -1,0 +1,21 @@
+{
+  "name": "genie-widget",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drop-in feedback overlay. One custom element, any product, no framework.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "html-to-image": "^1.11.13"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^5.7.2"
+  }
+}
