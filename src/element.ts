@@ -41,6 +41,26 @@ interface Payload {
   picks?: Picked[]
 }
 
+/**
+ * Everything below is interpolated into `innerHTML`, so anything that is not a
+ * compile-time literal is escaped here first.
+ *
+ * The picker's labels are the reason this exists. They are read straight off the
+ * host's DOM, so a host that correctly renders user-supplied text *as text* still
+ * hands that text back verbatim — and re-injecting it as markup would hand the
+ * page an XSS the host had already defused. The `strings` override travels the
+ * same path. Every attribute in these templates is double-quoted, so one escape
+ * covers text and attribute positions alike.
+ */
+function esc(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 export class GenieFeedback extends HTMLElement {
   static get observedAttributes(): string[] {
     return ['locale', 'strings']
@@ -250,33 +270,33 @@ export class GenieFeedback extends HTMLElement {
 
     const chips = TYPES.map(
       (t) =>
-        `<button class="chip" type="button" data-type="${t}" aria-pressed="${t === this.type}">${typeLabel[t]}</button>`,
+        `<button class="chip" type="button" data-type="${t}" aria-pressed="${t === this.type}">${esc(typeLabel[t])}</button>`,
     ).join('')
 
     // Four states, kept distinct: capturing · captured · failed · removed. The
     // last two look the same to a naive check, which is how a widget ends up
     // telling you the capture failed before it has been attempted.
     const shotRow = this.capturing
-      ? `<div class="shot"><span class="grow">${s.screenshotCapturing}</span></div>`
+      ? `<div class="shot"><span class="grow">${esc(s.screenshotCapturing)}</span></div>`
       : this.shot
-        ? `<div class="shot"><img src="${this.shot}" alt="" /><span class="grow">${s.screenshotLabel}</span>
-             <button class="link" type="button" data-act="unshot">${s.screenshotRemove}</button></div>`
+        ? `<div class="shot"><img src="${esc(this.shot)}" alt="" /><span class="grow">${esc(s.screenshotLabel)}</span>
+             <button class="link" type="button" data-act="unshot">${esc(s.screenshotRemove)}</button></div>`
         : this.shotFailed
-          ? `<div class="shot failed"><span class="grow">${s.screenshotFailed}</span>
-               <button class="link" type="button" data-act="reshot">${s.screenshotRetry}</button></div>`
-          : `<div class="shot"><span class="grow">${s.screenshotLabel}</span>
-               <button class="link" type="button" data-act="reshot">${s.screenshotRetry}</button></div>`
+          ? `<div class="shot failed"><span class="grow">${esc(s.screenshotFailed)}</span>
+               <button class="link" type="button" data-act="reshot">${esc(s.screenshotRetry)}</button></div>`
+          : `<div class="shot"><span class="grow">${esc(s.screenshotLabel)}</span>
+               <button class="link" type="button" data-act="reshot">${esc(s.screenshotRetry)}</button></div>`
 
     const badges =
       this.picks.length > 0
         ? `<div class="badges">${this.picks
-            .map((p) => `<span class="badge">${p.label}</span>`)
+            .map((p) => `<span class="badge">${esc(p.label)}</span>`)
             .join('')}</div>`
         : ''
 
     const voice = speechSupported()
       ? `<button class="btn ghost" type="button" data-act="voice">${
-          this.dictation ? s.voiceStop : s.voiceStart
+          esc(this.dictation ? s.voiceStop : s.voiceStart)
         }</button>`
       : ''
 
@@ -284,41 +304,41 @@ export class GenieFeedback extends HTMLElement {
       ? ''
       : picking
         ? `<div class="pickbar">
-             <span>${s.picking}${this.picks.length ? ` · ${this.picks.length} ${s.picked}` : ''}</span>
-             <button class="done" type="button" data-act="pickdone">${s.pickDone}</button>
+             <span>${esc(s.picking)}${this.picks.length ? ` · ${this.picks.length} ${esc(s.picked)}` : ''}</span>
+             <button class="done" type="button" data-act="pickdone">${esc(s.pickDone)}</button>
            </div>`
         : `<div class="scrim" data-act="close"></div>
-           <div class="panel" role="dialog" aria-modal="true" aria-label="${s.title}">
+           <div class="panel" role="dialog" aria-modal="true" aria-label="${esc(s.title)}">
              <div>
-               <h2>${s.title}</h2>
-               <p class="desc">${s.description}</p>
+               <h2>${esc(s.title)}</h2>
+               <p class="desc">${esc(s.description)}</p>
              </div>
              <div class="field">
-               <span class="label">${s.typeLabel}</span>
+               <span class="label">${esc(s.typeLabel)}</span>
                <div class="chips">${chips}</div>
              </div>
              <div class="field">
-               <span class="label">${s.messageLabel}</span>
-               <textarea maxlength="${MAX_LENGTH}" placeholder="${s.messagePlaceholder}"></textarea>
+               <span class="label">${esc(s.messageLabel)}</span>
+               <textarea maxlength="${MAX_LENGTH}" placeholder="${esc(s.messagePlaceholder)}"></textarea>
                <span class="count">${this.message.length} / ${MAX_LENGTH}</span>
              </div>
              ${shotRow}
              <div class="row">
-               <button class="btn ghost" type="button" data-act="pick">${s.pick}</button>
+               <button class="btn ghost" type="button" data-act="pick">${esc(s.pick)}</button>
                ${voice}
              </div>
              ${badges}
              <div class="actions">
-               <button class="btn" type="button" data-act="close">${s.cancel}</button>
+               <button class="btn" type="button" data-act="close">${esc(s.cancel)}</button>
                <button class="btn primary" type="button" data-act="submit" ${
                  this.message.trim() && !this.sending ? '' : 'disabled'
-               }>${this.sending ? s.submitting : s.submit}</button>
+               }>${esc(this.sending ? s.submitting : s.submit)}</button>
              </div>
            </div>`
 
     this.root.innerHTML = `
       <style>${STYLES}</style>
-      <button class="trigger" type="button" data-act="open" aria-label="${s.trigger}" aria-expanded="${this.open}">
+      <button class="trigger" type="button" data-act="open" aria-label="${esc(s.trigger)}" aria-expanded="${this.open}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -326,7 +346,7 @@ export class GenieFeedback extends HTMLElement {
       </button>
       ${panel}
       <div data-layer></div>
-      ${this.toast ? `<div class="toast${this.toast.bad ? ' bad' : ''}">${this.toast.text}</div>` : ''}
+      ${this.toast ? `<div class="toast${this.toast.bad ? ' bad' : ''}">${esc(this.toast.text)}</div>` : ''}
     `
 
     this.wire()
